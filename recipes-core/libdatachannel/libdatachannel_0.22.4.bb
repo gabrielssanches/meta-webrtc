@@ -12,23 +12,40 @@ S = "${WORKDIR}/git"
 
 inherit cmake pkgconfig
 
-# override install and install only what is needed
-do_install() {
-    install -d ${D}/${libdir}
-    install -m 0755 ${B}/${BPN}.so.${PV} ${D}/${libdir}
+PACKAGES = "${PN} ${PN}-dev ${PN}-dbg ${PN}-examples"
+
+DEPENDS = "libnice"
+
+RDEPENDS:${PN}-examples = "python3 python3-websockets"
+
+do_install:append() {
+    install -d ${D}/${bindir}/${PN}/examples/signaling-server-python
+    install -m 0755 ${S}/examples/signaling-server-python/signaling-server.py ${D}/${bindir}/${PN}/examples/signaling-server-python
 }
 
-PACKAGES = "${PN} ${PN}-dbg"
-
 FILES:${PN} = " \
-    ${libdir}/${BPN}.so* \
+    ${libdir}/*.so.* \
+    ${libdir}/cmake \
 "
+
+FILES:${PN}-dev = " \
+    ${libdir}/*.so* \
+    ${libdir}/*.so.${PV} \
+    ${libdir}/cmake \
+    ${includedir} \
+"
+
 FILES:${PN}-dbg = " \
     ${libdir}/.debug \
-    ${libdir}/.debug/${BPN}.so* \
+    ${libdir}/.debug/*.so* \
+    ${libdir}/.debug/*.so.${PV} \
 "
 
-PACKAGECONFIG ??= "openssl libjuice"
+FILES:${PN}-examples = " \
+    ${bindir}/${PN}/examples \
+"
+
+PACKAGECONFIG ??= "gnutls libjuice"
 PACKAGECONFIG[openssl] = "-DUSE_GNUTLS=OFF -DUSE_MBEDTLS=OFF,-DUSE_GNUTLS=OFF -DUSE_MBEDTLS=OFF,openssl,,,gnutls mbedtls"
 PACKAGECONFIG[gnutls] = "-DUSE_GNUTLS=ON -DUSE_MBEDTLS=OFF,-DUSE_GNUTLS=OFF -DUSE_MBEDTLS=OFF,gnutls,,,mbedtls openssl"
 PACKAGECONFIG[mbedtls] = "-DUSE_GNUTLS=OFF -DUSE_MBEDTLS=ON,-DUSE_GNUTLS=OFF -DUSE_MBEDTLS=OFF,mbedtls,,,gnutls openssl"
